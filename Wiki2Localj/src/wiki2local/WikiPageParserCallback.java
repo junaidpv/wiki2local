@@ -4,9 +4,7 @@
 
 package wiki2local;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import javax.swing.text.html.HTMLEditorKit.ParserCallback;
 import javax.swing.text.html.HTML.Tag;
 import javax.swing.text.html.HTML.Attribute;
@@ -31,7 +29,7 @@ public class WikiPageParserCallback extends ParserCallback {
             if(!imageList.containsKey(as.getAttribute(Attribute.SRC))) {
                 String image = (String) as.getAttribute(Attribute.SRC);
                 String extension = this.getExtension(image);
-                imageList.put(image, String.format("img_%06d.%s",imageList.size(),extension));
+                imageList.put(image, String.format("img_%05d.%s",imageList.size(),extension));
             }
         }
     }

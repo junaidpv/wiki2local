@@ -2,7 +2,6 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package wiki2local;
 
 import java.util.HashMap;
@@ -11,7 +10,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.List;
 import javax.swing.text.html.parser.ParserDelegator;
 
 /**
@@ -23,64 +21,72 @@ public class ImageExtractor extends HashMap<String, String> {
     /**
      * Directory to store images
      */
-    private String imagesDirectory="images/";
+    private String imagesDirectory = "images/";
     private FileOutputStream logger;
-    private List<String> htmlFileNameList=null;
-    private String basePath;
+    private HashMap<String, String> htmlPageFileList = null;
+    private String baseDirPath;
 
-    public ImageExtractor(String basePath, List<String> htmlFileNameList, File loggerFile)
-            throws NullPointerException, FileNotFoundException {
-        if(imagesDirectory != null && !imagesDirectory.equals("")) {
-            this.imagesDirectory = basePath+"images/";
-            File imageDir = new File(this.imagesDirectory);
-            if(!imageDir.exists()) imageDir.mkdir();
+    /**
+     *
+     * @param basePath Base directory to which contents to be loaded
+     * @param htmlPageFileList Page list pairs containg Wiki page name and file name
+     * @param loggerFile
+     * @throws Exception
+     */
+    public ImageExtractor(String baseDirPath, HashMap<String, String> htmlPageFileList, File loggerFile)
+            throws FileNotFoundException {
+        // Set image director under base directory
+        this.imagesDirectory = baseDirPath + "images/";
+        File imageDir = new File(this.imagesDirectory);
+        // if it does not exist, create it
+        if (!imageDir.exists()) {
+            imageDir.mkdir();
         }
-        else {
-            throw new NullPointerException("given basepath string is null.");
-        }
-        if(loggerFile == null) {
+        // If give loggerFile is null throw exception indicating it
+        if (loggerFile == null) {
             throw new NullPointerException("given file logger is null.");
-        }else if (!loggerFile.exists()) {
+        } // If logger file reference not null but it does not exist on disk
+        // throw exception
+        else if (!loggerFile.exists()) {
             throw new FileNotFoundException("given file logger does not exists.");
-        }
-        else {
+        } else {
             this.logger = new FileOutputStream(loggerFile);
         }
-
-        this.htmlFileNameList = htmlFileNameList;
-        this.basePath = basePath;
+        this.htmlPageFileList = htmlPageFileList;
+        this.baseDirPath = baseDirPath;
     }
 
     public void prepareImageList() throws IOException {
         WikiPageParserCallback callback = new WikiPageParserCallback(this);
-        Iterator i = this.htmlFileNameList.iterator();
+        Iterator i = this.htmlPageFileList.entrySet().iterator();
         while (i.hasNext()) {
-            String htmlFileName = (String) i.next();
+            Map.Entry pageEntry = (Map.Entry) i.next();
             try {
-                Reader reader = new FileReader(htmlFileName);
+                Reader reader = new FileReader((String) pageEntry.getValue());
                 new ParserDelegator().parse(reader, callback, true);
                 StringBuffer textBuffer = new StringBuffer();
                 char[] buffer = new char[1024];
                 int numread;
                 do {
                     numread = reader.read(buffer);
-                    if(numread>0) textBuffer.append(buffer, 0, numread);
-                } while(numread > -1);
+                    if (numread > 0) {
+                        textBuffer.append(buffer, 0, numread);
+                    }
+                } while (numread > -1);
                 reader.close();
                 String text = new String(textBuffer.toString());
                 Iterator mapi = this.entrySet().iterator();
-                while(mapi.hasNext()) {
+                while (mapi.hasNext()) {
                     Map.Entry entry = (Map.Entry) mapi.next();
                     String oldSrc = entry.getKey().toString();
                     String newSrc = entry.getValue().toString();
-                    text = text.replace(oldSrc, newSrc);
+                    text = text.replace(oldSrc, "images/"+newSrc);
                 }
-                Writer writer = new FileWriter(htmlFileName);
+                Writer writer = new FileWriter((String) pageEntry.getKey());
                 writer.write(text);
                 writer.close();
-            }
-            catch(IOException e) {
-                this.logger.write(String.format("Error: %s not found: %s\n", htmlFileName, e.getMessage()).getBytes());
+            } catch (IOException e) {
+                this.logger.write(String.format("Error: %s not found: %s\n", (String) pageEntry.getKey(), e.getMessage()).getBytes());
             }
         }
     }
@@ -89,31 +95,32 @@ public class ImageExtractor extends HashMap<String, String> {
         URL url = null;
         Iterator i = this.entrySet().iterator();
         while (i.hasNext()) {
-            Map.Entry entry = (Map.Entry)i.next();
+            Map.Entry entry = (Map.Entry) i.next();
             try {
                 url = new URL(entry.getKey().toString());
                 InputStream is = url.openStream();
-                File imageFile = new File(this.imagesDirectory+entry.getValue().toString());
-                if(!imageFile.exists()) imageFile.createNewFile();
+                File imageFile = new File(this.imagesDirectory + entry.getValue().toString());
+                if (!imageFile.exists()) {
+                    imageFile.createNewFile();
+                }
                 FileOutputStream fos = new FileOutputStream(imageFile);
                 int numread;
-                byte[] b=new byte[1024];
+                byte[] b = new byte[1024];
                 do {
-                    numread=is.read(b);
-                    if(numread > 0 ) fos.write(b, 0, numread);
-                } while(numread > -1);
+                    numread = is.read(b);
+                    if (numread > 0) {
+                        fos.write(b, 0, numread);
+                    }
+                } while (numread > -1);
                 fos.close();
-            }
-            catch(MalformedURLException e) {
+            } catch (MalformedURLException e) {
                 this.logger.write(String.format("Error: URL %s malformed: %s\n", entry.getKey().toString(), e.getMessage()).getBytes());
-            }
-            catch(FileNotFoundException e) {
+            } catch (FileNotFoundException e) {
+                this.logger.write(String.format("Error: %s\n", e.getMessage()).getBytes());
+            } catch (IOException e) {
                 this.logger.write(String.format("Error: %s\n", e.getMessage()).getBytes());
             }
-            catch(IOException e) {
-                this.logger.write(String.format("Error: %s\n", e.getMessage()).getBytes());
-            }
-            
+
         }
     }
 }
