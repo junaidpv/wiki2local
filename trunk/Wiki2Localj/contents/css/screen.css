@@ -1,0 +1,53 @@
+﻿div#purl, span.editsection, div.magnify {
+	display: none;
+}
+
+img {
+	border:thin;
+}
+
+ol.references {
+	font-size: 80%;
+}
+
+table#toc {
+	margin-left: 1em;
+}
+
+p {
+	margin-left: 1em;
+	margin-right: 1em;
+}
+
+div.tright {
+	float:right;
+	margin: 0.3em;
+	border: 1px gray solid;
+}
+
+div.tleft {
+	float: left;
+	margin: 0.3em;
+	border: 1px gray solid;
+}
+
+div.thumbinner {
+	margin: 0.2em;
+}
+table.gallery {
+	border-spacing: 3px;
+}
+table.gallery td {
+	vertical-align:top;
+	border: 1px gray solid;
+}
+a {
+	text-decoration: none;
+	color: inherit;
+	cursor:inherit;
+}
+
+table#toc a, sup.reference a {
+	color:blue;
+	cursor:pointer;
+}

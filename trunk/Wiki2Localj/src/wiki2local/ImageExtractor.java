@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.Map;
 import javax.swing.text.html.parser.ParserDelegator;
@@ -17,13 +18,15 @@ import javax.swing.text.html.parser.ParserDelegator;
 /**
  *
  * @author Junaid
+ * @version 0.5
+ * @since 0.1
  */
 public class ImageExtractor extends HashMap<String, String> {
 
     /**
      * Directory to store images
      */
-    private String imagesDirectory = "images/";
+    private File imagesDir;
     private FileOutputStream logger;
     private HashMap<String, String> htmlPageFileList = null;
 
@@ -34,14 +37,13 @@ public class ImageExtractor extends HashMap<String, String> {
      * @param loggerFile
      * @throws Exception
      */
-    public ImageExtractor(String baseDirPath, HashMap<String, String> htmlPageFileList, File loggerFile)
-            throws FileNotFoundException {
+    public ImageExtractor(File baseDir, HashMap<String, String> htmlPageFileList, File loggerFile)
+           throws FileNotFoundException  {
         // Set image director under base directory
-        this.imagesDirectory = baseDirPath + "images/";
-        File imageDir = new File(this.imagesDirectory);
+        this.imagesDir = new File(baseDir, "images");
         // if it does not exist, create it
-        if (!imageDir.exists()) {
-            imageDir.mkdir();
+        if (!this.imagesDir.exists()) {
+            this.imagesDir.mkdir();
         }
         // If given loggerFile is null throw an exception indicating it
         if (loggerFile == null) {
@@ -49,7 +51,7 @@ public class ImageExtractor extends HashMap<String, String> {
         } // If logger file reference not null but it does not exist on disk
         // throw exception
         else if (!loggerFile.exists()) {
-            throw new FileNotFoundException("given file logger does not exists.");
+            throw new FileNotFoundException("given file "+loggerFile.getPath()+" does not exists.");
         } else {
             this.logger = new FileOutputStream(loggerFile);
         }
@@ -111,6 +113,7 @@ public class ImageExtractor extends HashMap<String, String> {
      */
     public void extractImages() throws IOException {
         URL url = null;
+        File imageFile = null;
         // iterate over the list of images
         Iterator i = this.entrySet().iterator();
         while (i.hasNext()) {
@@ -119,7 +122,7 @@ public class ImageExtractor extends HashMap<String, String> {
                 url = new URL(entry.getKey().toString());   // create URL object from url string
                 InputStream is = url.openStream();  // open a stream to read URL target's content
                 // create a file to save image
-                File imageFile = new File(this.imagesDirectory + entry.getValue().toString());
+                imageFile = new File(this.imagesDir, entry.getValue().toString());
                 /*
                 if (!imageFile.exists()) {
                     imageFile.createNewFile();
@@ -136,11 +139,9 @@ public class ImageExtractor extends HashMap<String, String> {
                 } while (numread > -1);     // while end of the file
                 fos.close();
             } catch (MalformedURLException e) {
-                this.logger.write(String.format("Error: URL %s malformed: %s\n", entry.getKey().toString(), e.getMessage()).getBytes());
+                this.logger.write(String.format("URL %s malformed.\n", entry.getKey().toString()).getBytes(Charset.forName("UTF-8")));
             } catch (FileNotFoundException e) {
-                this.logger.write(String.format("Error: %s\n", e.getMessage()).getBytes());
-            } catch (IOException e) {
-                this.logger.write(String.format("Error: %s\n", e.getMessage()).getBytes());
+                this.logger.write(String.format("file %s\n", imageFile.getPath()).getBytes(Charset.forName("UTF-8")));
             }
 
         }
