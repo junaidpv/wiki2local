@@ -14,14 +14,15 @@ import javax.swing.text.MutableAttributeSet;
 import java.util.HashMap;
 
 /**
+ * Class handling HTML parsing
  *
  * @author Junaid
- * @version $version
- * Class handling HTML parsing
+ * @version 0.5
+ * @since 0.1
  */
 public class WikiPageParserCallback extends ParserCallback {
     private HashMap imageList = null;
-    public WikiPageParserCallback(HashMap imageList) throws IOException {
+    public WikiPageParserCallback(HashMap imageList) {
         this.imageList = imageList;
     }
 

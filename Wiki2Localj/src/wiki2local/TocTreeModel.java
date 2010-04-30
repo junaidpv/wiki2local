@@ -11,8 +11,12 @@ import java.util.*;
 import java.util.regex.*;
 
 /**
+ * Class represing JTree's tree model
+ * this also contain a static method to parse give topic stril list to tree model
  *
  * @author Junaid
+ * @version 0.5
+ * @since 0.1
  */
 public class TocTreeModel extends DefaultTreeModel {
 

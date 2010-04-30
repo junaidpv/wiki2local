@@ -17,30 +17,28 @@ import org.xml.sax.SAXException;
 /**
  *
  * @author Junaid
+ * @version 0.5
+ * @since 0.1
  */
 public class WikiPageExtractor {
     //public List<String> wikiPageList;
 
-    public String baseDirPath;
+    public File baseDir;
     public String pageRequestFormat;
     public HashMap<String, String> htmlPageFileList;
     public ImageExtractor imageExtractor;
     public FileOutputStream logger;
 
-    public WikiPageExtractor(HashMap<String, String> wikiPageList, String baseDirPath, String lan, String project, File loggerFile)
+    public WikiPageExtractor(HashMap<String, String> wikiPageList, File baseDir, String lan, String project, File loggerFile)
             throws FileNotFoundException {
         this.htmlPageFileList = wikiPageList;
-        if (baseDirPath == null) {
-            throw new NullPointerException("given base path string is null");
+        if (baseDir == null) {
+            throw new NullPointerException("given base path is null");
         }
-        File baseDir = new File(baseDirPath);
-        if(!baseDir.exists() || !baseDir.isDirectory()) {
+        else if(!baseDir.exists() || !baseDir.isDirectory()) {
             throw new FileNotFoundException("give base directory not exist.");
         }
-        else {
-
-            this.baseDirPath = baseDirPath.endsWith("/") ? baseDirPath : baseDirPath + "/";
-        }
+        else this.baseDir = baseDir;
         if (loggerFile == null) {
             throw new NullPointerException("given file logger is null.");
         } else if (!loggerFile.exists()) {
@@ -49,18 +47,16 @@ public class WikiPageExtractor {
             this.logger = new FileOutputStream(loggerFile);
         }
         this.pageRequestFormat = "http://" + lan + "." + project + ".org/w/api.php?action=parse&page=%s&format=xml";
-        this.imageExtractor = new ImageExtractor(this.baseDirPath, htmlPageFileList, loggerFile);
+        this.imageExtractor = new ImageExtractor(this.baseDir, htmlPageFileList, loggerFile);
     }
 
-    public void extractPages() throws IOException, ParserConfigurationException, SAXException {
+    public void extractPages()
+            throws UnsupportedEncodingException,
+            ParserConfigurationException, SAXException, FileNotFoundException, IOException {
         Iterator i = this.htmlPageFileList.entrySet().iterator();
-        WikiPageParserCallback callback = new WikiPageParserCallback(this.imageExtractor);
+        WikiPageParserCallback callback= new WikiPageParserCallback(this.imageExtractor);
         int itemNum = 0;
-        File imgDir = new File( this.baseDirPath + "images/");
-        if (!imgDir.exists()) {
-            imgDir.mkdir();
-        }
-        File pageTemplateFile = new File(this.baseDirPath + "page_template.html");
+        File pageTemplateFile = new File(this.baseDir, "page_template.html");
         BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(pageTemplateFile),"UTF-8"));
         StringBuilder textBuffer = new StringBuilder();
         char[] buffer = new char[1024];
@@ -71,14 +67,12 @@ public class WikiPageExtractor {
         } while(numread != -1);
         br.close();
         String pageText = textBuffer.toString();
-        String baseDirName = new File(this.baseDirPath).getName();
-        baseDirName = baseDirName.endsWith("/") ? baseDirName : baseDirName + "/";
         while (i.hasNext()) {
             Map.Entry<String, String> pageEntry = (Map.Entry) i.next();
             String pageUrl = String.format(this.pageRequestFormat, pageEntry.getKey());
             String uniqueFileName = String.format("page_%05d.html",itemNum);
             this.htmlPageFileList.put(pageEntry.getKey(), uniqueFileName);
-            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(this.baseDirPath+uniqueFileName)), "UTF-8"));
+            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(this.baseDir, uniqueFileName)), "UTF-8"));
             DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             Document dd = db.parse(pageUrl);
             NodeList parseNodeList = dd.getElementsByTagName("parse");

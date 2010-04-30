@@ -6,6 +6,7 @@
  */
 package wiki2local;
 
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -14,6 +15,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import javax.swing.*;
+import javax.swing.border.BevelBorder;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.xml.parsers.ParserConfigurationException;
 import org.xml.sax.SAXException;
@@ -22,19 +24,29 @@ import org.xml.sax.SAXException;
  * Main window class of this project
  * 
  * @author Junaid
- * @version 0.2
+ * @version 0.5
+ * @since 0.1
  */
 public class MainFrame extends JFrame {
 
-    JTree topicTree;
-    GridBagLayout layout;
-    TocTreeModel tocTreeModel;
-    JTextField baseDirTextField;
-    JButton pullButton;
-    JLabel statusTextLabel;
-    JButton openTopicButtion;
-    JButton aboutButton;
-    JButton quitButton;
+    private JTree topicTree;
+    private GridBagLayout layout;
+    private TocTreeModel tocTreeModel;
+    private JTextField baseDirTextField;
+    private JButton pullButton;
+    private JLabel statusTextLabel;
+    private JButton openTopicButtion;
+    private JButton aboutButton;
+    private JButton quitButton;
+    private JButton optionsButton;
+
+    private String language = "ml";
+    private String project = "wikipedia";
+    private String menuId = "example";
+    private String menuClass = "filetree";
+    private String topicNodeClass = "closed";
+    private String topicItemClass = "folder";
+    private String pageItemClass = "file";
 
     public MainFrame(String title) {
         super(title);
@@ -42,12 +54,17 @@ public class MainFrame extends JFrame {
 
     public void initialize() {
         setSize(400, 400);
+        
+        this.setIconImage(new ImageIcon(getClass().getResource("/wiki2local/Logo.png")).getImage());
         // call to initiate visual components in the form
         initDisplayComponents();
         setVisible(true);
     }
 
-    public void initDisplayComponents() {
+    /**
+     * Method to initialize visual coponents of the form
+     */
+    private void initDisplayComponents() {
         /*
         Font font = null;
         try {
@@ -68,7 +85,7 @@ public class MainFrame extends JFrame {
 
             @Override
             public void mouseClicked(MouseEvent event) {
-                openTopicButtonClicked(event);
+                openTopicButtonClicked();
             }
         });
         gbc.gridx = 0;
@@ -78,12 +95,25 @@ public class MainFrame extends JFrame {
         gbc.anchor = GridBagConstraints.LINE_START;
         this.add(this.openTopicButtion, gbc);
 
+        this.openTopicButtion = new JButton("Options...");
+        this.openTopicButtion.addMouseListener(new MouseAdapter(){
+            @Override
+            public void mouseClicked(MouseEvent event) {
+                optionsButtonClicked();
+            }
+        });
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.CENTER;
+        this.add(this.openTopicButtion, gbc);
+
+
         this.aboutButton = new JButton("About");
         this.aboutButton.addMouseListener(new MouseAdapter() {
 
             @Override
             public void mouseClicked(MouseEvent event) {
-                aboutButtonClicked(event);
+                aboutButtonClicked();
             }
         });
         gbc.gridx = 2;
@@ -115,7 +145,7 @@ public class MainFrame extends JFrame {
 
             @Override
             public void mouseClicked(MouseEvent event) {
-                baseDirChooserButtonClicked(event);
+                baseDirChooserButtonClicked();
             }
         });
         gbc.gridx = 2;
@@ -131,7 +161,7 @@ public class MainFrame extends JFrame {
 
             @Override
             public void mouseClicked(MouseEvent event) {
-                pullButtonClicked(event);
+                pullButtonClicked();
             }
         });
         gbc.gridx = 0;
@@ -142,6 +172,12 @@ public class MainFrame extends JFrame {
         this.add(this.pullButton, gbc);
 
         this.quitButton = new JButton("Quit");
+        this.quitButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent event) {
+                quitButtonClicked();
+            }
+        });
         gbc.gridx = 2;
         gbc.gridy = 3;
         gbc.gridwidth = 1;
@@ -150,16 +186,20 @@ public class MainFrame extends JFrame {
         this.add(this.quitButton, gbc);
 
         this.statusTextLabel = new JLabel(": Clik 'Open Topic File' button to select topic list file.");
+        this.statusTextLabel.setBorder(new BevelBorder(BevelBorder.LOWERED));
+        this.statusTextLabel.setMinimumSize(new Dimension(this.statusTextLabel.getSize().width,50));
+        this.statusTextLabel.setVerticalAlignment(JLabel.TOP);
         gbc.gridx = 0;
         gbc.gridy = 4;
         gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.insets.bottom = 5;
         this.add(this.statusTextLabel, gbc);
 
         this.addWindowListener(new WindowAdapter() {
 
             @Override
             public void windowClosing(WindowEvent event) {
-                frameClosing(event);
+                frameClosing();
             }
         });
     }
@@ -167,14 +207,14 @@ public class MainFrame extends JFrame {
     /**
      * Initialize menu of this window
      */
-    public void frameClosing(WindowEvent event) {
+    private void frameClosing() {
         System.exit(0);
     }
 
     /*
      * Will be called when user click Open Topic button
      */
-    public void openTopicButtonClicked(MouseEvent event) {
+    private void openTopicButtonClicked() {
         JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir"));
         fileChooser.showOpenDialog(this);
         try {
@@ -196,34 +236,47 @@ public class MainFrame extends JFrame {
                     }
                 } while (t != null);    // read while null line, that is end of line
                 fis.close();    // close file input stream
-
-                // subsequent classes in this project assume base director name string
-                // contains backslash ('/') as last character
-                File baseDir = new File(this.baseDirTextField.getText());
-                String baseDirName = baseDir.getName();
-                // ensure base directory name contains backslash as last character
-                baseDirName = baseDirName.endsWith("/") ? baseDirName : baseDirName + "/";
+                
                 // this call inlcludes list of items in the topic file
                 // and classes and ids for HTML elements that form topic tree structure
-                // later we may allow users to select different names for these html element properties
-                this.tocTreeModel = TocTreeModel.parse(items, "example", "filetree", "closed", "folder", "file");
+                this.tocTreeModel = TocTreeModel.parse(items, this.menuId, this.menuClass, this.topicNodeClass, this.topicItemClass,this.pageItemClass);
                 if (this.tocTreeModel != null) {    // ensure returned topic tree is not null
                     this.topicTree.setModel(tocTreeModel); // set as tree model for JTree component
+                    this.statusTextLabel.setText(": Set base directory to store captured contents.");
                 } else { // if returend tree model is null, then topic file is not in the proper format
+                    this.topicTree.setModel(null);
                     JOptionPane.showMessageDialog(this, "Topic file format not valid.");    // tell this issue to user
                 }
             }
         } catch (IOException e) {
-            this.showError(e);
+            this.showError(e, "An I/O exception occured.");
         }
+    }
+    /**
+     * Will be called when user click 'Options...' button
+     * @param event
+     */
+    private void optionsButtonClicked() {
+        // create an OptionsDialog
+        OptionsDialog optionsDialog = new OptionsDialog(this, true);
+        optionsDialog.setVisible(true);
+        this.language = optionsDialog.getLanguage();
+        this.project = optionsDialog.getProject();
+        this.menuId = optionsDialog.getMenuId();
+        this.menuClass = optionsDialog.getMenuClass();
+        this.topicNodeClass = optionsDialog.getTopicNodeClass();
+        this.topicItemClass = optionsDialog.getTopicItemClass();
+        this.pageItemClass = optionsDialog.getPageItemClass();
+        optionsDialog.dispose();
     }
     /**
      * Will be called when user click 'About' button
      * So we can show some information to user about this project
      * @param event
      */
-    public void aboutButtonClicked(MouseEvent event) {
-        // TODO:
+    private void aboutButtonClicked() {
+        AboutDialog aboutDialog = new AboutDialog(this,true);
+        aboutDialog.setVisible(true);
     }
 
     /**
@@ -231,7 +284,7 @@ public class MainFrame extends JFrame {
      * contents tha will be captured from wiki
      * @param event
      */
-    public void baseDirChooserButtonClicked(MouseEvent event) {
+    private void baseDirChooserButtonClicked() {
         // alwawys show current direcory as defualt
         JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir"));
         // we want select only directory not a file, so set it
@@ -239,6 +292,8 @@ public class MainFrame extends JFrame {
         fileChooser.showOpenDialog(this);
         if (fileChooser.getSelectedFile() != null) {    // if user selected a directory
             this.baseDirTextField.setText(fileChooser.getSelectedFile().toString());    // show it in the text field
+            if (this.tocTreeModel!=null) this.statusTextLabel.setText(": Click 'Start...' to start capturing.");
+            else this.statusTextLabel.setText(": Click 'Open Topic File' to load topic list.");
         }
     }
 
@@ -247,12 +302,9 @@ public class MainFrame extends JFrame {
      * web capturing methods will be called inside this method
      * @param event
      */
-    public void pullButtonClicked(MouseEvent event) {
+    private void pullButtonClicked() {
         // get the file object represeing base directory
         File baseDir = new File(this.baseDirTextField.getText());
-        String baseDirName = baseDir.getName();
-        // ensure backslash is the last character
-        baseDirName = baseDirName.endsWith("/") ? baseDirName : baseDirName + "/";
         // if user has not loaded proper topic list file tocTreeModel would be null
         if (this.tocTreeModel == null) {    // user not loaded topic list file
             JOptionPane.showMessageDialog(this, "Load topic list first."); // let user to know it
@@ -264,20 +316,25 @@ public class MainFrame extends JFrame {
             try {
                 // log file
                 // TODO: something has to do with logger
-                File loggerFile = new File("log.log");
+                File loggerFile = new File(baseDir,"log.log");
+                if(!loggerFile.exists()) {
+                    loggerFile.createNewFile();
+                }
+                this.statusTextLabel.setText(": Preparing list of pages to capture...");
                 // get list of pages those to captured from wiki
                 // it will be prepared from loaded topic list file
                 HashMap pageList = this.tocTreeModel.getPageList();
                 // create a page extractor object that helps us to capture wiki pages
                 // we are giving wiki page list, base directory, wiki language, wiki project type and logger file
-                // we may later add funtionality in GUI to select diffrent languages and projects
-                WikiPageExtractor pageExtractor = new WikiPageExtractor(pageList, baseDirName, "ml", "wikipedia", loggerFile);
+                WikiPageExtractor pageExtractor = new WikiPageExtractor(pageList, baseDir, this.language, this.project, loggerFile);
+                this.statusTextLabel.setText(": Extracting pages...");
                 // request extractor to capture pages in the wiki
                 pageExtractor.extractPages();
+                this.statusTextLabel.setText(": Writing TOC to toc.html ...");
                 // request for topic tree as html string
                 String htmlTree = this.tocTreeModel.getHtmlTocTree(pageExtractor.getHtmlFileList());
                 // we have to read table of contes template file
-                BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(baseDirName + "toc_template.html")), "UTF-8"));
+                BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(baseDir, "toc_template.html")), "UTF-8"));
                 char[] buffer = new char[1024]; // temporaty buffer to store read characters
                 StringBuilder textBuffer = new StringBuilder(); // string builder to appedn read array of characters
                 int numread;
@@ -289,7 +346,7 @@ public class MainFrame extends JFrame {
                 } while (numread != -1);
                 br.close();     // close buffer and underlying stream
                 // set table of contents HTML file
-                File tocFile = new File(baseDirName + "toc.html");
+                File tocFile = new File(baseDir, "toc.html");
                 // we are writing UTF-8 encoded file
                 BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tocFile), "UTF-8"));
                 // post prepare table of contents html stream at correct position
@@ -299,32 +356,44 @@ public class MainFrame extends JFrame {
                 bw.flush();
                 bw.close();
                 this.statusTextLabel.setText("Done.");  // let user to konw we are completed
+                JOptionPane.showMessageDialog(this, "Capturing process completed.");
             } catch (UnsupportedEncodingException e) {
-                this.showError(e);
-            } catch (SAXException e) {
-                this.showError(e);
+                this.showError(e, "No UTF-8 encoding/decoding support.");
+            }  catch (SAXException e) {
+                this.showError(e ,"HTML parsing error.");
             } catch (ParserConfigurationException e) {
-                this.showError(e);
+                this.showError(e, "HTML parser configuration error.");
             } catch (FileNotFoundException e) {
-                this.showError(e);
+                this.showError(e , "File Not Found error");
             } catch (IOException e) {
-                this.showError(e);
+                this.showError(e , "Input/Output error.");
             } catch (NullPointerException e) {
-                this.showError(e);
+                this.showError(e, "Nullponter error");
             }
         }
+    }
+    /**
+     * Will be called when Quit button clicked
+     * it will exit the application
+     * @param event
+     */
+    private void quitButtonClicked() {
+        this.setVisible(false);
+        this.dispose();
+        System.exit(0);
     }
 
     /**
      * Method helps to bring exceptions to user
      * @param e
      */
-    private void showError(Exception e) {
-        String msg = "";
+    private void showError(Exception e, String message) {
+        String exceptionMessage = "";
         StackTraceElement stackTrace[] = e.getStackTrace();
         for (StackTraceElement item : stackTrace) {
-            msg += item.toString() + "\n";
+            exceptionMessage += item.toString() + "\n";
         }
-        JOptionPane.showMessageDialog(this, "Exception occured: " + msg);
+        ErrorMessageDialog errorMsgDialog = new ErrorMessageDialog(this, true, message, exceptionMessage);
+        errorMsgDialog.setVisible(true);
     }
 }
