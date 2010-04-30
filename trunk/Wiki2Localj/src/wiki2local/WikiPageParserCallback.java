@@ -1,7 +1,9 @@
-/*
- * 
+/* File: WikiPageParserCallback.java
+ * $Author$
+ * $LastChangedDate$
+ * $Rev$
+ * Licensed under GPL v3
  */
-
 package wiki2local;
 
 import java.io.IOException;

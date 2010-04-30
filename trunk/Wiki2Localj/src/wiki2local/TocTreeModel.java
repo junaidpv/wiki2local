@@ -1,13 +1,13 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/* File: TocTreeModel.java
+ * $Author$
+ * $LastChangedDate$
+ * $Rev$
+ * Licensed under GPL v3
  */
 package wiki2local;
 
 import javax.swing.tree.*;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashMap;
+import java.util.*;
 import java.util.regex.*;
 
 /**
@@ -22,9 +22,18 @@ public class TocTreeModel extends DefaultTreeModel {
     private String topicNodeSpanClass;
     private String pageNodeSpanClass;
     private HashMap<String, String> pageList;
-    private String basePath;
 
-    private TocTreeModel(DefaultMutableTreeNode root, HashMap<String, String> pageList, String treeID, String treeClass, String topicNodeClass, String topicNodeSpanClass, String pageNodeSpanClass, String basePath) {
+    /**
+     *
+     * @param root  roote node
+     * @param pageList  list of wikipagename, htmlfilename pairs
+     * @param treeID    ID of html tag UL that hold table of contents
+     * @param treeClass css class for TOC UL tag
+     * @param topicNodeClass    css class for topic node LI tag
+     * @param topicNodeSpanClass    css class for topic node SPAN tag
+     * @param pageNodeSpanClass     css class for page node
+     */
+    private TocTreeModel(DefaultMutableTreeNode root, HashMap<String, String> pageList, String treeID, String treeClass, String topicNodeClass, String topicNodeSpanClass, String pageNodeSpanClass) {
         super(root);
         this.treeID = treeID;
         this.treeClass = treeClass;
@@ -32,23 +41,35 @@ public class TocTreeModel extends DefaultTreeModel {
         this.topicNodeSpanClass = topicNodeSpanClass;
         this.pageNodeSpanClass = pageNodeSpanClass;
         this.pageList = pageList;
-        this.basePath = basePath;
     }
-
+    /**
+     * Method helps to create table of contents HTML tree
+     * @param pageList  list of wikipage name, html file name pairs
+     * @return  table of contents as HTML text
+     */
     public String getHtmlTocTree(HashMap<String, String> pageList) {
-        this.pageList = pageList;
+        this.pageList = pageList;   // store page list to instance varibale
+        // string builder to prepare html string
         StringBuilder builder = new StringBuilder();
+        // prepare level to header tag with root node text within it
         builder.append(String.format("<h2>%s</h2>",((DefaultMutableTreeNode) this.root).getUserObject() ));
         builder.append(String.format("<ul id='%s' class=\"%s\" >", treeID, treeClass));
+        // get first child under root node to start with
         DefaultMutableTreeNode childNode = (DefaultMutableTreeNode) this.root.getChildAt(0);
-        while(childNode != null) {
-            this.getHtmlString(childNode, builder);
-            childNode = childNode.getNextSibling();
+        while(childNode != null) {  // iterate ovr all children of root node
+            this.getHtmlString(childNode, builder); // get sub tree under that node
+            childNode = childNode.getNextSibling(); // set next node to process
         }
         builder.append("</ul>");
+        // return HTML table of contents string
         return builder.toString();
     }
 
+    /** helps to prepare subtree under each node
+     * 
+     * @param node
+     * @param builder
+     */
     public void getHtmlString(DefaultMutableTreeNode node, StringBuilder builder) {
         String entry = (String) node.getUserObject();
         if (node.isLeaf()) {
@@ -64,7 +85,7 @@ public class TocTreeModel extends DefaultTreeModel {
         }
     }
 
-    public static TocTreeModel parse(ArrayList<String> sArray, String treeID, String treeClass, String topicNodeClass, String topicNodeSpanClass, String pageNodeSpanClass, String basePath) {
+    public static TocTreeModel parse(ArrayList<String> sArray, String treeID, String treeClass, String topicNodeClass, String topicNodeSpanClass, String pageNodeSpanClass) {
         TocTreeModel tocTreeModel = null;
         boolean match = true;
         DefaultMutableTreeNode rootNode = null;
@@ -124,7 +145,7 @@ public class TocTreeModel extends DefaultTreeModel {
             }
         }
         if (match) {
-            tocTreeModel = new TocTreeModel(rootNode, pageList, treeID, treeClass, topicNodeClass, topicNodeSpanClass, pageNodeSpanClass, basePath);
+            tocTreeModel = new TocTreeModel(rootNode, pageList, treeID, treeClass, topicNodeClass, topicNodeSpanClass, pageNodeSpanClass);
         }
         return tocTreeModel;
     }
