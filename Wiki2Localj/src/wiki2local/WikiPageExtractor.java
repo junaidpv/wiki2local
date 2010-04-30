@@ -1,6 +1,8 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/* File: WikiPageExtractor.java
+ * $Author$
+ * $LastChangedDate$
+ * $Rev$
+ * Licensed under GPL v3
  */
 package wiki2local;
 
@@ -10,6 +12,7 @@ import java.io.BufferedWriter;
 import javax.xml.parsers.*;
 import org.w3c.dom.*;
 import javax.swing.text.html.parser.ParserDelegator;
+import org.xml.sax.SAXException;
 
 /**
  *
@@ -24,7 +27,8 @@ public class WikiPageExtractor {
     public ImageExtractor imageExtractor;
     public FileOutputStream logger;
 
-    public WikiPageExtractor(HashMap<String, String> wikiPageList, String baseDirPath, String lan, String project, File loggerFile) throws IOException {
+    public WikiPageExtractor(HashMap<String, String> wikiPageList, String baseDirPath, String lan, String project, File loggerFile)
+            throws FileNotFoundException {
         this.htmlPageFileList = wikiPageList;
         if (baseDirPath == null) {
             throw new NullPointerException("given base path string is null");
@@ -48,7 +52,7 @@ public class WikiPageExtractor {
         this.imageExtractor = new ImageExtractor(this.baseDirPath, htmlPageFileList, loggerFile);
     }
 
-    public void extractPages() throws Exception {
+    public void extractPages() throws IOException, ParserConfigurationException, SAXException {
         Iterator i = this.htmlPageFileList.entrySet().iterator();
         WikiPageParserCallback callback = new WikiPageParserCallback(this.imageExtractor);
         int itemNum = 0;
