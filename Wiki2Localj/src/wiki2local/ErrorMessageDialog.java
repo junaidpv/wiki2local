@@ -18,6 +18,8 @@ import java.awt.event.WindowEvent;
 /**
  *
  * @author Junaid
+ * @version 0.6
+ * @since 0.6
  */
 public class ErrorMessageDialog extends javax.swing.JDialog {
 

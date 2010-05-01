@@ -17,22 +17,24 @@ import java.util.HashMap;
  * Class handling HTML parsing
  *
  * @author Junaid
- * @version 0.5
+ * @version 0.6
  * @since 0.1
  */
 public class WikiPageParserCallback extends ParserCallback {
-    private HashMap imageList = null;
-    public WikiPageParserCallback(HashMap imageList) {
+
+    private HashMap<String, String> imageList = null;
+
+    public WikiPageParserCallback(HashMap<String, String> imageList) {
         this.imageList = imageList;
     }
 
     @Override
-    public void handleSimpleTag (Tag tag, MutableAttributeSet as, int pos) {
-        if(tag == Tag.IMG && as.isDefined(Attribute.SRC) ) {
-            if(!imageList.containsKey(as.getAttribute(Attribute.SRC))) {
+    public void handleSimpleTag(Tag tag, MutableAttributeSet as, int pos) {
+        if (tag == Tag.IMG && as.isDefined(Attribute.SRC)) {
+            if (!imageList.containsKey(as.getAttribute(Attribute.SRC))) {
                 String image = (String) as.getAttribute(Attribute.SRC);
                 String extension = this.getExtension(image);
-                imageList.put(image, String.format("img_%05d.%s",imageList.size(),extension));
+                imageList.put(image, String.format("img_%05d.%s", imageList.size(), extension));
             }
         }
     }
@@ -46,10 +48,10 @@ public class WikiPageParserCallback extends ParserCallback {
     }
 
     public String getExtension(String url) {
-        if(url !=null && !url.equals("")) {
-            return url.substring(url.lastIndexOf(".")+1, url.length());
+        if (url != null && !url.equals("")) {
+            return url.substring(url.lastIndexOf(".") + 1, url.length());
+        } else {
+            return null;
         }
-        else return null;
     }
-
 }

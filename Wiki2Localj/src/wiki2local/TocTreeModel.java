@@ -15,7 +15,7 @@ import java.util.regex.*;
  * this also contain a static method to parse give topic stril list to tree model
  *
  * @author Junaid
- * @version 0.5
+ * @version 0.6
  * @since 0.1
  */
 public class TocTreeModel extends DefaultTreeModel {
@@ -130,9 +130,11 @@ public class TocTreeModel extends DefaultTreeModel {
                     if (depthChange < 0) {
                         for (int j = 0; j < Math.abs(depthChange); j++) {
                             parentTopicNode = (DefaultMutableTreeNode) parentTopicNode.getParent();
+                            parentDepth -=1;
                         }
                     } else if ((currentDepth - parentDepth) == 2) {
                         parentTopicNode = lastTopicNode;
+                        parentDepth +=1;
                     }
                     depth = currentDepth;
                     parentTopicNode.add(child);
