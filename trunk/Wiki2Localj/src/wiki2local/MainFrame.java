@@ -13,18 +13,22 @@ import java.awt.Insets;
 import java.awt.event.*;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
+import javax.swing.text.BadLocationException;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.xml.parsers.ParserConfigurationException;
 import org.xml.sax.SAXException;
+
+import wiki2local.OptionsDialog.Options;
 
 /**
  * Main window class of this project
  * 
  * @author Junaid
- * @version 0.5
+ * @version 0.6
  * @since 0.1
  */
 public class MainFrame extends JFrame {
@@ -40,13 +44,8 @@ public class MainFrame extends JFrame {
     private JButton quitButton;
     private JButton optionsButton;
 
-    private String language = "ml";
-    private String project = "wikipedia";
-    private String menuId = "example";
-    private String menuClass = "filetree";
-    private String topicNodeClass = "closed";
-    private String topicItemClass = "folder";
-    private String pageItemClass = "file";
+
+    private EnumMap<Options, String> options;
 
     public MainFrame(String title) {
         super(title);
@@ -58,6 +57,14 @@ public class MainFrame extends JFrame {
         this.setIconImage(new ImageIcon(getClass().getResource("/wiki2local/Logo.png")).getImage());
         // call to initiate visual components in the form
         initDisplayComponents();
+        this.options = new EnumMap<Options, String>(Options.class);
+        this.options.put(Options.LANGUAGE, "ml");
+        this.options.put(Options.PROJECT, "wikipedia");
+        this.options.put(Options.MENU_ID, "example");
+        this.options.put(Options.MENU_CLASS, "filetree");
+        this.options.put(Options.TOPIC_NODE_CLASS, "closed");
+        this.options.put(Options.TOPIC_ITEM_CLASS, "folder");
+        this.options.put(Options.PAGE_ITEM_CLASS, "file");
         setVisible(true);
     }
 
@@ -95,8 +102,8 @@ public class MainFrame extends JFrame {
         gbc.anchor = GridBagConstraints.LINE_START;
         this.add(this.openTopicButtion, gbc);
 
-        this.openTopicButtion = new JButton("Options...");
-        this.openTopicButtion.addMouseListener(new MouseAdapter(){
+        this.optionsButton= new JButton("Options...");
+        this.optionsButton.addMouseListener(new MouseAdapter(){
             @Override
             public void mouseClicked(MouseEvent event) {
                 optionsButtonClicked();
@@ -105,7 +112,7 @@ public class MainFrame extends JFrame {
         gbc.gridx = 1;
         gbc.gridy = 0;
         gbc.anchor = GridBagConstraints.CENTER;
-        this.add(this.openTopicButtion, gbc);
+        this.add(this.optionsButton, gbc);
 
 
         this.aboutButton = new JButton("About");
@@ -239,7 +246,7 @@ public class MainFrame extends JFrame {
                 
                 // this call inlcludes list of items in the topic file
                 // and classes and ids for HTML elements that form topic tree structure
-                this.tocTreeModel = TocTreeModel.parse(items, this.menuId, this.menuClass, this.topicNodeClass, this.topicItemClass,this.pageItemClass);
+                this.tocTreeModel = TocTreeModel.parse(items, this.options.get(Options.MENU_ID), this.options.get(Options.MENU_CLASS), this.options.get(Options.TOPIC_NODE_CLASS), this.options.get(Options.TOPIC_ITEM_CLASS),this.options.get(Options.PAGE_ITEM_CLASS));
                 if (this.tocTreeModel != null) {    // ensure returned topic tree is not null
                     this.topicTree.setModel(tocTreeModel); // set as tree model for JTree component
                     this.statusTextLabel.setText(": Set base directory to store captured contents.");
@@ -258,15 +265,15 @@ public class MainFrame extends JFrame {
      */
     private void optionsButtonClicked() {
         // create an OptionsDialog
-        OptionsDialog optionsDialog = new OptionsDialog(this, true);
+        OptionsDialog optionsDialog = new OptionsDialog(this, true, this.options);
         optionsDialog.setVisible(true);
-        this.language = optionsDialog.getLanguage();
-        this.project = optionsDialog.getProject();
-        this.menuId = optionsDialog.getMenuId();
-        this.menuClass = optionsDialog.getMenuClass();
-        this.topicNodeClass = optionsDialog.getTopicNodeClass();
-        this.topicItemClass = optionsDialog.getTopicItemClass();
-        this.pageItemClass = optionsDialog.getPageItemClass();
+        this.options.put(Options.LANGUAGE, optionsDialog.getLanguage());
+        this.options.put(Options.PROJECT, optionsDialog.getProject());
+        this.options.put(Options.MENU_ID, optionsDialog.getMenuId());
+        this.options.put(Options.MENU_CLASS, optionsDialog.getMenuClass());
+        this.options.put(Options.TOPIC_NODE_CLASS, optionsDialog.getTopicNodeClass());
+        this.options.put(Options.TOPIC_ITEM_CLASS, optionsDialog.getTopicItemClass());
+        this.options.put(Options.PAGE_ITEM_CLASS, optionsDialog.getPageItemClass());
         optionsDialog.dispose();
     }
     /**
@@ -314,6 +321,7 @@ public class MainFrame extends JFrame {
             JOptionPane.showMessageDialog(this, "Directory to which load contents does not exist.");
         } else {    // so every every requirements are met
             try {
+                this.setEnabled(false);
                 // log file
                 // TODO: something has to do with logger
                 File loggerFile = new File(baseDir,"log.log");
@@ -323,10 +331,10 @@ public class MainFrame extends JFrame {
                 this.statusTextLabel.setText(": Preparing list of pages to capture...");
                 // get list of pages those to captured from wiki
                 // it will be prepared from loaded topic list file
-                HashMap pageList = this.tocTreeModel.getPageList();
+                HashMap<String, String> pageList = this.tocTreeModel.getPageList();
                 // create a page extractor object that helps us to capture wiki pages
                 // we are giving wiki page list, base directory, wiki language, wiki project type and logger file
-                WikiPageExtractor pageExtractor = new WikiPageExtractor(pageList, baseDir, this.language, this.project, loggerFile);
+                WikiPageExtractor pageExtractor = new WikiPageExtractor(pageList, baseDir, this.options.get(Options.LANGUAGE), this.options.get(Options.PROJECT));
                 this.statusTextLabel.setText(": Extracting pages...");
                 // request extractor to capture pages in the wiki
                 pageExtractor.extractPages();
@@ -359,7 +367,10 @@ public class MainFrame extends JFrame {
                 JOptionPane.showMessageDialog(this, "Capturing process completed.");
             } catch (UnsupportedEncodingException e) {
                 this.showError(e, "No UTF-8 encoding/decoding support.");
-            }  catch (SAXException e) {
+            } catch(BadLocationException e) {
+                this.showError(e, "BadLocation error.");
+            }
+            catch (SAXException e) {
                 this.showError(e ,"HTML parsing error.");
             } catch (ParserConfigurationException e) {
                 this.showError(e, "HTML parser configuration error.");
@@ -369,6 +380,9 @@ public class MainFrame extends JFrame {
                 this.showError(e , "Input/Output error.");
             } catch (NullPointerException e) {
                 this.showError(e, "Nullponter error");
+            }
+            finally {
+                this.setEnabled(true);
             }
         }
     }

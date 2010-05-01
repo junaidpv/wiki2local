@@ -14,19 +14,31 @@ package wiki2local;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.EnumMap;
 
 /**
  * Dialog helps user to set diffrent options.
  * @author Junaid
- * @version 0.5
+ * @version 0.6
  * @since 0.5
  */
 public class OptionsDialog extends javax.swing.JDialog {
+    public enum Options {
+        LANGUAGE,
+        PROJECT,
+        MENU_ID,
+        MENU_CLASS,
+        TOPIC_NODE_CLASS,
+        TOPIC_ITEM_CLASS,
+        PAGE_ITEM_CLASS
+    }
+    private EnumMap<Options, String> options;
 
     /** Creates new form OptionsDialog */
-    public OptionsDialog(java.awt.Frame parent, boolean modal) {
+    public OptionsDialog(java.awt.Frame parent, boolean modal, EnumMap<Options, String> options) {
         super(parent, modal);
         initComponents();
+        this.options = options;
         setDefaults();
         this.addWindowListener(new WindowAdapter(){
             @Override
@@ -69,9 +81,9 @@ public class OptionsDialog extends javax.swing.JDialog {
         setTitle("Options");
         setResizable(false);
 
-        jLabel1.setText("Language:");
+        jLabel1.setText("Wiki Language:");
 
-        jLabel2.setText("Project:");
+        jLabel2.setText("Wiki Project:");
 
         languageTextField.setText("ml");
 
@@ -184,22 +196,18 @@ public class OptionsDialog extends javax.swing.JDialog {
         layout.setHorizontalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(layout.createSequentialGroup()
+                .add(10, 10, 10)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(layout.createSequentialGroup()
-                        .add(10, 10, 10)
                         .add(jLabel1)
                         .add(18, 18, 18)
                         .add(languageTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 34, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                     .add(layout.createSequentialGroup()
-                        .add(10, 10, 10)
                         .add(jLabel2)
                         .add(31, 31, 31)
                         .add(projectCombo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                    .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(layout.createSequentialGroup()
-                        .add(10, 10, 10)
-                        .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                    .add(layout.createSequentialGroup()
-                        .add(10, 10, 10)
                         .add(resetButton)
                         .add(81, 81, 81)
                         .add(okButton)
@@ -235,7 +243,7 @@ public class OptionsDialog extends javax.swing.JDialog {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    public void closeWindow() {
+    private void closeWindow() {
         this.setDefaults();
         this.setVisible(false);
         this.dispose();
@@ -254,13 +262,13 @@ public class OptionsDialog extends javax.swing.JDialog {
     }//GEN-LAST:event_cancelButtonActionPerformed
 
     public void setDefaults() {
-        this.languageTextField.setText("ml");
-        this.projectCombo.setSelectedIndex(0);
-        this.menuIdTextField.setText("example");
-        this.menuClassTextField.setText("filetree");
-        this.topicNodeClass.setText("closed");
-        this.topicItemClass.setText("folder");
-        this.pageItemClass.setText("file");
+        this.languageTextField.setText(this.options.get(Options.LANGUAGE));
+        this.projectCombo.setSelectedItem(this.options.get(Options.PROJECT));
+        this.menuIdTextField.setText(this.options.get(Options.MENU_ID));
+        this.menuClassTextField.setText(this.options.get(Options.MENU_CLASS));
+        this.topicNodeClass.setText(this.options.get(Options.TOPIC_NODE_CLASS));
+        this.topicItemClass.setText(this.options.get(Options.TOPIC_ITEM_CLASS));
+        this.pageItemClass.setText(this.options.get(Options.PAGE_ITEM_CLASS));
     }
     public String getLanguage() {
         return this.languageTextField.getText();
