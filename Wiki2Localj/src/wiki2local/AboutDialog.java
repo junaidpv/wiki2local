@@ -18,7 +18,7 @@ import java.awt.event.WindowEvent;
 /**
  *
  * @author Junaid
- * @version 0.5
+ * @version 0.6
  * @since 0.5
  */
 public class AboutDialog extends javax.swing.JDialog {
