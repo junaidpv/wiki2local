@@ -19,7 +19,7 @@ import org.xml.sax.SAXException;
 /**
  *
  * @author Junaid
- * @version 0.6
+ * @version 0.6.5
  * @since 0.1
  */
 public class WikiPageExtractor {
@@ -97,7 +97,20 @@ public class WikiPageExtractor {
             // create document builder object, which will help to parse obtained api result string
             // which is in xml format
             DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            Document dd = db.parse(pageUrl);    // parse contents obtained from given url
+            Document dd=null;
+            int tried = 0;
+            while (true) {  // we will try maximum 5 times to load url result
+                try {
+                    dd = db.parse(pageUrl);    // parse contents obtained from given url
+                } catch (IOException e) {
+                    if (tried<5) {  // if we tried less than 5 times
+                        tried++;    // we have exception one more time
+                        continue;
+                    }
+                    else throw e;
+                }
+                break;
+            }           
             // obtaine list of parse nodes in xml (only one would be there,
             // because we requesting only for one wiki page
             NodeList parseNodeList = dd.getElementsByTagName("parse");
