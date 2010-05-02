@@ -10,13 +10,14 @@ import java.util.HashMap;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.Iterator;
 import java.util.Map;
 
 /**
  *
  * @author Junaid
- * @version 0.6
+ * @version 0.6.5
  * @since 0.1
  */
 public class ImageExtractor extends HashMap<String, String> {
@@ -68,7 +69,24 @@ public class ImageExtractor extends HashMap<String, String> {
         while (i.hasNext()) {
             Map.Entry entry = (Map.Entry) i.next();
             url = new URL(entry.getKey().toString());   // create URL object from url string
-            InputStream is = url.openStream();  // open a stream to read URL target's content
+            InputStream is = null;
+            int tried = 0;  // no yet tried
+            while(true) {
+                try {
+                    URLConnection connection = url.openConnection();
+                    is = connection.getInputStream();
+                } catch(IOException e) {
+                    if(tried<5) {   // if tried less than 5 times
+                        tried++;
+                        continue;   // try one time
+                    }
+                    else {  // we have tried 5 times, why shold try more? may some connection poblem
+                        throw e;
+                    }
+                }
+                break;
+            }
+            is = url.openStream();  // open a stream to read URL target's content
             // create a file to save image
             imageFile = new File(this.imagesDir, entry.getValue().toString());
             /*
