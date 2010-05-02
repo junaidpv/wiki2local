@@ -11,7 +11,7 @@ import javax.swing.SwingUtilities;
 /**
  *
  * @author Junaid
- * @version 0.6
+ * @version 0.6.5
  * @since 0.1
  */
 public class Main {
@@ -21,7 +21,7 @@ public class Main {
      */
     public static void main(String[] args) throws Exception {
         System.setProperty("program.name", "Wiki2Local");
-        System.setProperty("program.version", "0.6");
+        System.setProperty("program.version", "0.6.5");
         System.setProperty("program.author", "Junaid P V");
         System.setProperty("program.authorlink", "http://ml.wikipedia.org/wiki/User:Junaidpv");
         System.setProperty("program.description", "Program to capture set of wikipages to local disk.");
