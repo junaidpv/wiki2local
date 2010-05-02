@@ -17,7 +17,7 @@ import java.util.Map;
 /**
  *
  * @author Junaid
- * @version 0.6.5
+ * @version 0.7
  * @since 0.1
  */
 public class ImageExtractor extends HashMap<String, String> {
@@ -27,6 +27,8 @@ public class ImageExtractor extends HashMap<String, String> {
      */
     private File imagesDir;
 
+    private ExtractWorker worker;
+
     /**
      *
      * @param basePath Base directory to which contents to be loaded
@@ -34,7 +36,7 @@ public class ImageExtractor extends HashMap<String, String> {
      * @param loggerFile
      * @throws Exception
      */
-    public ImageExtractor(File baseDir, HashMap<String, String> htmlPageFileList)
+    public ImageExtractor(File baseDir, HashMap<String, String> htmlPageFileList, ExtractWorker worker)
             throws FileNotFoundException {
         // Set image director under base directory
         this.imagesDir = new File(baseDir, "images");
@@ -54,6 +56,7 @@ public class ImageExtractor extends HashMap<String, String> {
         this.logger = new FileOutputStream(loggerFile);
         }*/
         //this.htmlPageFileList = htmlPageFileList;
+        this.worker = worker;
     }
 
     /**
@@ -61,7 +64,7 @@ public class ImageExtractor extends HashMap<String, String> {
      * @throws IOException
      */
     public void extractImages()
-            throws MalformedURLException, FileNotFoundException, IOException {
+            throws MalformedURLException, FileNotFoundException, IOException, InterruptedException {
         URL url = null;
         File imageFile = null;
         // iterate over the list of images
@@ -69,6 +72,7 @@ public class ImageExtractor extends HashMap<String, String> {
         while (i.hasNext()) {
             Map.Entry entry = (Map.Entry) i.next();
             url = new URL(entry.getKey().toString());   // create URL object from url string
+            this.worker.publish("Getting image " + url.toString());
             InputStream is = null;
             int tried = 0;  // no yet tried
             while(true) {
@@ -77,22 +81,23 @@ public class ImageExtractor extends HashMap<String, String> {
                     is = connection.getInputStream();
                 } catch(IOException e) {
                     if(tried<5) {   // if tried less than 5 times
+                        this.worker.publish("\nI/O error occured, will try in 3 seconds.\n");
+                        Thread.sleep(3000);
                         tried++;
                         continue;   // try one time
                     }
                     else {  // we have tried 5 times, why shold try more? may some connection poblem
+                        this.worker.publish("Aborting.\n");
                         throw e;
                     }
                 }
                 break;
             }
+            this.worker.publish(" Done.\n");
             is = url.openStream();  // open a stream to read URL target's content
             // create a file to save image
             imageFile = new File(this.imagesDir, entry.getValue().toString());
-            /*
-            if (!imageFile.exists()) {
-            imageFile.createNewFile();
-            }*/
+            this.worker.publish("Writing to file " + imageFile.getName());
             // open a file output stream to store image data
             FileOutputStream fos = new FileOutputStream(imageFile);
             int numread;
@@ -105,6 +110,7 @@ public class ImageExtractor extends HashMap<String, String> {
             } while (numread > -1);     // while end of the file
             is.close();
             fos.close();
+            this.worker.publish(" Done.\n");
         }
     }
 }
