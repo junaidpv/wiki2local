@@ -19,7 +19,7 @@ import org.xml.sax.SAXException;
 /**
  *
  * @author Junaid
- * @version 0.6.5
+ * @version 0.7
  * @since 0.1
  */
 public class WikiPageExtractor {
@@ -28,9 +28,10 @@ public class WikiPageExtractor {
     private String pageRequestFormat;
     private HashMap<String, String> htmlPageFileList;
     private ImageExtractor imageExtractor;
+    private ExtractWorker worker;
     //private FileOutputStream logger;
 
-    public WikiPageExtractor(HashMap<String, String> wikiPageList, File baseDir, String lan, String project)
+    public WikiPageExtractor(HashMap<String, String> wikiPageList, File baseDir, String lan, String project, ExtractWorker worker)
             throws FileNotFoundException {
         this.htmlPageFileList = wikiPageList;
         if (baseDir == null) {
@@ -49,7 +50,8 @@ public class WikiPageExtractor {
         this.logger = new FileOutputStream(loggerFile);
         }*/
         this.pageRequestFormat = "http://" + lan + "." + project + ".org/w/api.php?action=parse&page=%s&format=xml";
-        this.imageExtractor = new ImageExtractor(this.baseDir, htmlPageFileList);
+        this.imageExtractor = new ImageExtractor(this.baseDir, htmlPageFileList, worker);
+        this.worker = worker;
     }
 
     /**
@@ -62,7 +64,7 @@ public class WikiPageExtractor {
      */
     public void extractPages()
             throws UnsupportedEncodingException, BadLocationException,
-            ParserConfigurationException, SAXException, FileNotFoundException, IOException {
+            ParserConfigurationException, SAXException, FileNotFoundException, IOException, InterruptedException {
         // call back object helps while parsing html pages
         WikiPageParserCallback callback = new WikiPageParserCallback(this.imageExtractor);
         int itemNum = 0;
@@ -83,10 +85,13 @@ public class WikiPageExtractor {
         // iterator over the list of html pages
         Iterator i = this.htmlPageFileList.entrySet().iterator();
         while (i.hasNext()) {   // while list has next element
+            this.worker.publish("Sleeping for 3 secods...\n");
+            Thread.sleep(3000); // adding delay to reduce server load
             String tempText = textBuffer.toString();    // get template file text in string object
             Map.Entry<String, String> pageEntry = (Map.Entry<String, String>) i.next();
             // prepare wiki api request url from its format and argument(s)
             String pageUrl = String.format(this.pageRequestFormat, pageEntry.getKey());
+            this.worker.publish("Getting wiki page '"+ pageEntry.getKey()+"' from wiki.\n");
             // file name to which wiki page contents to be written
             String uniqueFileName = String.format("page_%05d.html", itemNum);
             // pair generated file name wiki wiki page name
@@ -104,13 +109,19 @@ public class WikiPageExtractor {
                     dd = db.parse(pageUrl);    // parse contents obtained from given url
                 } catch (IOException e) {
                     if (tried<5) {  // if we tried less than 5 times
+                        this.worker.publish("I/O error occured, will try in 3 seconds.\n");
+                        Thread.sleep(3000);
                         tried++;    // we have exception one more time
                         continue;
                     }
-                    else throw e;
+                    else {
+                        this.worker.publish("Aborting.\n");
+                        throw e;
+                    }
                 }
                 break;
-            }           
+            }
+            this.worker.publish("\n Done.\n");
             // obtaine list of parse nodes in xml (only one would be there,
             // because we requesting only for one wiki page
             NodeList parseNodeList = dd.getElementsByTagName("parse");
@@ -139,12 +150,16 @@ public class WikiPageExtractor {
                 // at local 'images' directory under base directory
                 tempText = tempText.replace(oldSrc, "images/" + newSrc);
             }
+            this.worker.publish("Writing wiki page contents to file '"+uniqueFileName+"'.");
             bw.write(tempText);
             bw.close();
+            this.worker.publish(" Done.\n");
             itemNum++;
         }
         // extract list of images prepares so far
+        this.worker.publish("Extracting all images.\n");
         this.imageExtractor.extractImages();
+        this.worker.publish("Extracting all images completed.\n");
     }
 
     // return list of wikipage, html file name pairs
