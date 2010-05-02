@@ -101,7 +101,7 @@ public class OptionsDialog extends javax.swing.JDialog {
 
         jLabel7.setText("Page Node Item Class (page node SPAN css class):");
 
-        jLabel8.setText("<html>These are HTML tag properties that form TOC tree. Most of the time there will be no need to change these items.</html>");
+        jLabel8.setText("<html>These are HTML tag properties of that form TOC tree. Most of the time there will be no need to change these items.</html>");
 
         menuIdTextField.setText("jTextField1");
         menuIdTextField.setMinimumSize(new java.awt.Dimension(50, 20));

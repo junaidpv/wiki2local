@@ -6,6 +6,7 @@
  */
 package wiki2local;
 
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -14,13 +15,9 @@ import java.awt.event.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.EnumMap;
-import java.util.HashMap;
+import java.util.List;
 import javax.swing.*;
-import javax.swing.border.BevelBorder;
-import javax.swing.text.BadLocationException;
 import javax.swing.tree.DefaultMutableTreeNode;
-import javax.xml.parsers.ParserConfigurationException;
-import org.xml.sax.SAXException;
 
 import wiki2local.OptionsDialog.Options;
 
@@ -28,7 +25,7 @@ import wiki2local.OptionsDialog.Options;
  * Main window class of this project
  * 
  * @author Junaid
- * @version 0.6
+ * @version 0.7
  * @since 0.1
  */
 public class MainFrame extends JFrame {
@@ -38,12 +35,12 @@ public class MainFrame extends JFrame {
     private TocTreeModel tocTreeModel;
     private JTextField baseDirTextField;
     private JButton pullButton;
-    private JLabel statusTextLabel;
+    private JTextArea statusTextArea;
     private JButton openTopicButtion;
     private JButton aboutButton;
     private JButton quitButton;
     private JButton optionsButton;
-
+    private JButton baseDirChooserButton;
 
     private EnumMap<Options, String> options;
 
@@ -52,7 +49,7 @@ public class MainFrame extends JFrame {
     }
 
     public void initialize() {
-        setSize(400, 400);
+        setSize(600, 500);
         
         this.setIconImage(new ImageIcon(getClass().getResource("/wiki2local/Logo.png")).getImage());
         // call to initiate visual components in the form
@@ -147,7 +144,7 @@ public class MainFrame extends JFrame {
         gbc.anchor = GridBagConstraints.LINE_START;
         this.add(this.baseDirTextField, gbc);
 
-        JButton baseDirChooserButton = new JButton("Set Base Directory");
+        this.baseDirChooserButton = new JButton("Set Base Directory");
         baseDirChooserButton.addMouseListener(new MouseAdapter() {
 
             @Override
@@ -192,15 +189,21 @@ public class MainFrame extends JFrame {
         gbc.anchor = GridBagConstraints.CENTER;
         this.add(this.quitButton, gbc);
 
-        this.statusTextLabel = new JLabel(": Clik 'Open Topic File' button to select topic list file.");
-        this.statusTextLabel.setBorder(new BevelBorder(BevelBorder.LOWERED));
-        this.statusTextLabel.setMinimumSize(new Dimension(this.statusTextLabel.getSize().width,50));
-        this.statusTextLabel.setVerticalAlignment(JLabel.TOP);
+        JLabel statusLabel= new JLabel("Messages:");
         gbc.gridx = 0;
         gbc.gridy = 4;
         gbc.gridwidth = GridBagConstraints.REMAINDER;
-        gbc.insets.bottom = 5;
-        this.add(this.statusTextLabel, gbc);
+        this.add(statusLabel, gbc);
+
+        this.statusTextArea = new JTextArea("Clik 'Open Topic File' button to select topic list file.");
+        //this.statusTextArea.setBorder(new BevelBorder(BevelBorder.LOWERED));
+        this.statusTextArea.setEditable(false);
+        //this.statusTextArea.setVerticalAlignment(JLabel.TOP);
+        JScrollPane scrollPane = new JScrollPane(this.statusTextArea);
+        scrollPane.setMinimumSize(new Dimension(this.statusTextArea.getSize().width,150));
+        gbc.gridx = 0;
+        gbc.gridy = 5;
+        this.add(scrollPane, gbc);
 
         this.addWindowListener(new WindowAdapter() {
 
@@ -249,7 +252,7 @@ public class MainFrame extends JFrame {
                 this.tocTreeModel = TocTreeModel.parse(items, this.options.get(Options.MENU_ID), this.options.get(Options.MENU_CLASS), this.options.get(Options.TOPIC_NODE_CLASS), this.options.get(Options.TOPIC_ITEM_CLASS),this.options.get(Options.PAGE_ITEM_CLASS));
                 if (this.tocTreeModel != null) {    // ensure returned topic tree is not null
                     this.topicTree.setModel(tocTreeModel); // set as tree model for JTree component
-                    this.statusTextLabel.setText(": Set base directory to store captured contents.");
+                    this.statusTextArea.setText("Set base directory to store captured contents.");
                 } else { // if returend tree model is null, then topic file is not in the proper format
                     this.topicTree.setModel(null);
                     JOptionPane.showMessageDialog(this, "Topic file format not valid.");    // tell this issue to user
@@ -299,8 +302,8 @@ public class MainFrame extends JFrame {
         fileChooser.showOpenDialog(this);
         if (fileChooser.getSelectedFile() != null) {    // if user selected a directory
             this.baseDirTextField.setText(fileChooser.getSelectedFile().toString());    // show it in the text field
-            if (this.tocTreeModel!=null) this.statusTextLabel.setText(": Click 'Start...' to start capturing.");
-            else this.statusTextLabel.setText(": Click 'Open Topic File' to load topic list.");
+            if (this.tocTreeModel!=null) this.statusTextArea.setText("Click 'Start...' to start capturing.");
+            else this.statusTextArea.setText("Click 'Open Topic File' to load topic list.");
         }
     }
 
@@ -320,70 +323,15 @@ public class MainFrame extends JFrame {
         } else if (!baseDir.exists()) { // if user specified directory does not exist
             JOptionPane.showMessageDialog(this, "Directory to which load contents does not exist.");
         } else {    // so every every requirements are met
-            try {
-                this.setEnabled(false);
-                // log file
-                // TODO: something has to do with logger
-                File loggerFile = new File(baseDir,"log.log");
-                if(!loggerFile.exists()) {
-                    loggerFile.createNewFile();
-                }
-                this.statusTextLabel.setText(": Preparing list of pages to capture...");
-                // get list of pages those to captured from wiki
-                // it will be prepared from loaded topic list file
-                HashMap<String, String> pageList = this.tocTreeModel.getPageList();
-                // create a page extractor object that helps us to capture wiki pages
-                // we are giving wiki page list, base directory, wiki language, wiki project type and logger file
-                WikiPageExtractor pageExtractor = new WikiPageExtractor(pageList, baseDir, this.options.get(Options.LANGUAGE), this.options.get(Options.PROJECT));
-                this.statusTextLabel.setText(": Extracting pages...");
-                // request extractor to capture pages in the wiki
-                pageExtractor.extractPages();
-                this.statusTextLabel.setText(": Writing TOC to toc.html ...");
-                // request for topic tree as html string
-                String htmlTree = this.tocTreeModel.getHtmlTocTree(pageExtractor.getHtmlFileList());
-                // we have to read table of contes template file
-                BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(baseDir, "toc_template.html")), "UTF-8"));
-                char[] buffer = new char[1024]; // temporaty buffer to store read characters
-                StringBuilder textBuffer = new StringBuilder(); // string builder to appedn read array of characters
-                int numread;
-                do {
-                    numread = br.read(buffer);  // read next available characters
-                    if (numread > 0) {  // ensure at least one character was read
-                        textBuffer.append(buffer, 0, numread);  // append read characters to string builder
-                    }
-                } while (numread != -1);
-                br.close();     // close buffer and underlying stream
-                // set table of contents HTML file
-                File tocFile = new File(baseDir, "toc.html");
-                // we are writing UTF-8 encoded file
-                BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tocFile), "UTF-8"));
-                // post prepare table of contents html stream at correct position
-                String newText = textBuffer.toString().replaceAll("\\{\\$TOC\\$\\}", htmlTree);
-                // write contents to buffer, so to stream and file
-                bw.write(newText);
-                bw.flush();
-                bw.close();
-                this.statusTextLabel.setText("Done.");  // let user to konw we are completed
-                JOptionPane.showMessageDialog(this, "Capturing process completed.");
-            } catch (UnsupportedEncodingException e) {
-                this.showError(e, "No UTF-8 encoding/decoding support.");
-            } catch(BadLocationException e) {
-                this.showError(e, "BadLocation error.");
-            }
-            catch (SAXException e) {
-                this.showError(e ,"HTML parsing error.");
-            } catch (ParserConfigurationException e) {
-                this.showError(e, "HTML parser configuration error.");
-            } catch (FileNotFoundException e) {
-                this.showError(e , "File Not Found error");
-            } catch (IOException e) {
-                this.showError(e , "Input/Output error.");
-            } catch (NullPointerException e) {
-                this.showError(e, "Nullponter error");
-            }
-            finally {
-                this.setEnabled(true);
-            }
+            List<Component> componentsToDisable = new ArrayList<Component>(6);
+            componentsToDisable.add(this.openTopicButtion);
+            componentsToDisable.add(this.optionsButton);
+            componentsToDisable.add(this.topicTree);
+            componentsToDisable.add(this.baseDirTextField);
+            componentsToDisable.add(this.baseDirChooserButton);
+            componentsToDisable.add(this.pullButton);
+            ExtractWorker extractWorker = new ExtractWorker(baseDir, this.tocTreeModel, this.options, this.statusTextArea, componentsToDisable);
+            extractWorker.execute();
         }
     }
     /**

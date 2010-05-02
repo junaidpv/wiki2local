@@ -212,7 +212,7 @@
         </Component>
         <Component class="javax.swing.JLabel" name="jLabel8">
           <Properties>
-            <Property name="text" type="java.lang.String" value="&lt;html&gt;These are HTML tag properties that form TOC tree. Most of the time there will be no need to change these items.&lt;/html&gt;"/>
+            <Property name="text" type="java.lang.String" value="&lt;html&gt;These are HTML tag properties of that form TOC tree. Most of the time there will be no need to change these items.&lt;/html&gt;"/>
           </Properties>
         </Component>
         <Component class="javax.swing.JTextField" name="menuIdTextField">
