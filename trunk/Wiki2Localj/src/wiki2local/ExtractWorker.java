@@ -4,7 +4,6 @@
  * $Rev$
  * Licensed under GPL v3
  */
-
 package wiki2local;
 
 import java.awt.Component;
@@ -21,12 +20,13 @@ import org.xml.sax.SAXException;
 import wiki2local.OptionsDialog.Options;
 
 /**
- * Class to exceute page and image extraction process in as speperate thread
+ * Class to exceute page and image extraction process in a speperate thread
  * @author Junaid
  * @version 0.7
  * @since 0.7
  */
 public class ExtractWorker extends SwingWorker<Void, String> {
+
     private File baseDir;
     private TocTreeModel tocTreeModel;
     private EnumMap<Options, String> options;
@@ -44,14 +44,14 @@ public class ExtractWorker extends SwingWorker<Void, String> {
     @Override
     protected Void doInBackground() throws InterruptedException {
         String message = "";
-        for (Component component: this.componestsToDisable) {
+        for (Component component : this.componestsToDisable) {
             component.setEnabled(false);
         }
         try {
             // log file
             // TODO: something has to do with logger
-            File loggerFile = new File(baseDir,"log.log");
-            if(!loggerFile.exists()) {
+            File loggerFile = new File(baseDir, "log.log");
+            if (!loggerFile.exists()) {
                 loggerFile.createNewFile();
             }
             this.publish("\nPreparing page list...\n");
@@ -96,11 +96,10 @@ public class ExtractWorker extends SwingWorker<Void, String> {
             bw.flush();
             bw.close();
             this.publish("Page extraction process completed.\n");
-        }
-        catch (UnsupportedEncodingException e) {
+        } catch (UnsupportedEncodingException e) {
             message = "No UTF-8 encoding/decoding support: \n" + this.getExceptionMessages(e);
             this.publish(message);
-        } catch(BadLocationException e) {
+        } catch (BadLocationException e) {
             message = "BadLocation error: \n" + this.getExceptionMessages(e);
             this.publish(message);
         } catch (SAXException e) {
@@ -118,25 +117,39 @@ public class ExtractWorker extends SwingWorker<Void, String> {
         } catch (NullPointerException e) {
             message = "Nullponter error: \n" + this.getExceptionMessages(e);
             this.publish(message);
-        }
-        finally {
-            for (Component component: this.componestsToDisable) {
-            component.setEnabled(true);
-        }
+        } finally {
+            for (Component component : this.componestsToDisable) {
+                component.setEnabled(true);
+            }
         }
         return null;
     }
+
+    /**
+     * We will get published strings as chunks here in a seperate thres, so can process
+     * @param messages
+     */
     @Override
-    protected void process(List<String> messages){
-        for (String message: messages) {
-            this.textArea.setText(this.textArea.getText()+message);
+    protected void process(List<String> messages) {
+        for (String message : messages) {
+            this.textArea.setText(this.textArea.getText() + message);
         }
     }
 
+    /**
+     * Allowing to call this method from outside of this class
+     * original methods accessor is protected
+     * @param message
+     */
     public void publish(String message) {
         super.publish(message);
     }
 
+    /**
+     * Get exception messages from stacktrace to a single string
+     * @param e
+     * @return
+     */
     private String getExceptionMessages(Exception e) {
         String exceptionMessage = "";
         StackTraceElement stackTrace[] = e.getStackTrace();
